@@ -1,0 +1,45 @@
+- name: Deploy Example Site  
+  hosts: all
+  vars:
+    
+    domain: tlefonotest.duckdns.org
+
+  tasks:  
+  
+  - name: Installing nginx  
+    apt:  
+      pkg:
+        - nginx
+        - python3-certbot-nginx
+      update_cache: yes
+
+  
+  - name: Copying site files  
+    copy:  
+      src: "index.html"
+      dest: /var/www/html/{{ domain }}
+  
+  - name: Adding site to nginx  
+    template:  
+      src: "nginx-template.j2"
+      dest: /etc/nginx/sites-available/{{ domain }}
+  
+  - name: Enabling site in nginx  
+    file:  
+      src: /etc/nginx/sites-available/{{ domain }}
+      dest: /etc/nginx/sites-enabled/{{ domain }}
+      state: link  
+  
+  - name: Installing certbot  
+    apt:  
+      pkg:
+        - certbot
+        - python3-certbot-nginx 
+  
+  - name: Requesting certificate, creating cron autorenew 
+    shell: certbot --nginx -d {{ domain }}
+
+  - name: Restaring nginx  
+    systemd:  
+      name: nginx  
+      state: restarted
